@@ -7,10 +7,21 @@ services:
       POSTGRES_USER: compliance
       POSTGRES_PASSWORD: compliance
       POSTGRES_DB: compliance_db
-    ports:
-      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://compliance:compliance@db:5432/compliance_db
+    depends_on:
+      - db
+    restart: unless-stopped
 
 volumes:
   pgdata:
