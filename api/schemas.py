@@ -53,3 +53,18 @@ class ComplianceResponse(BaseModel):
 
 class CreaComplianceResponse(ComplianceResponse):
     details: CreaDetailsSchema
+
+
+class HistoryRecord(BaseModel):
+    id: int
+    cnpj: str
+    orgao: str
+    status: str
+    numero_licenca: str | None
+    tipo_licenca: str | None
+    validade: str | None
+    days_to_expiry: int | None
+    data_consulta: datetime
+
+    class Config:
+        from_attributes = True

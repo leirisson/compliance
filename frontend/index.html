@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compliance API — Tester</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0a;
+      --surface:   #111111;
+      --border:    #222222;
+      --border2:   #2e2e2e;
+      --muted:     #444444;
+      --text:      #c8c8c8;
+      --text-dim:  #666666;
+      --accent:    #e8ff3c;
+      --green:     #39d353;
+      --amber:     #f5a623;
+      --red:       #ff4545;
+      --blue:      #4da6ff;
+      --mono:      'IBM Plex Mono', monospace;
+      --sans:      'IBM Plex Sans', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── LAYOUT ── */
+    .shell {
+      display: grid;
+      grid-template-rows: 48px 1fr;
+      grid-template-columns: 260px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .topbar-logo {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .topbar-sep { flex: 1; }
+    .topbar-base {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    #baseInput {
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      width: 240px;
+      outline: none;
+    }
+    #baseInput:focus { border-color: var(--accent); }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background .3s;
+    }
+    .status-dot.ok   { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.err  { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+    .status-dot.busy { background: var(--amber);  animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      overflow-y: auto;
+      padding: 16px 0;
+    }
+    .sidebar-section {
+      padding: 6px 16px 2px;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .endpoint-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background .15s;
+    }
+    .endpoint-btn:hover { background: rgba(255,255,255,.04); }
+    .endpoint-btn.active { background: rgba(232,255,60,.07); }
+    .method-badge {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 2px;
+      background: rgba(77,166,255,.15);
+      color: var(--blue);
+      flex-shrink: 0;
+      letter-spacing: .04em;
+    }
+    .endpoint-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .endpoint-desc {
+      font-size: 10px;
+      color: var(--text-dim);
+      padding: 0 16px 8px 16px;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── REQUEST PANEL ── */
+    .req-panel {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .req-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 12px;
+    }
+    .req-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .req-method {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--blue);
+      background: rgba(77,166,255,.12);
+      border: 1px solid rgba(77,166,255,.2);
+      padding: 6px 12px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .req-url-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .req-url-base {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      padding: 6px 0 6px 12px;
+      white-space: nowrap;
+    }
+    #urlPath {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 12px;
+      outline: none;
+    }
+    #urlPath::placeholder { color: var(--muted); }
+    .send-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: .05em;
+      transition: opacity .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover   { opacity: .88; }
+    .send-btn:active  { transform: scale(.97); }
+    .send-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* CNPJ helper */
+    .param-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+    }
+    .param-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+    #cnpjInput {
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      width: 200px;
+      outline: none;
+      letter-spacing: .06em;
+    }
+    #cnpjInput:focus { border-color: var(--accent); }
+    .fill-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    .fill-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── RESPONSE PANEL ── */
+    .res-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .res-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .res-header-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-dim);
+    }
+    .status-chip {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 3px;
+    }
+    .chip-200 { background: rgba(57,211,83,.15);  color: var(--green); }
+    .chip-4xx { background: rgba(245,166,35,.15); color: var(--amber); }
+    .chip-5xx { background: rgba(255,69,69,.15);  color: var(--red);   }
+    .res-time {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+    .res-tabs {
+      display: flex;
+      gap: 2px;
+      padding: 6px 24px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .res-tab {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      padding: 5px 12px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color .15s;
+    }
+    .res-tab:hover { color: var(--text); }
+    .res-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .res-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+    .tab-pane {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+    }
+    .tab-pane.active { display: block; }
+
+    /* JSON view */
+    .json-wrap {
+      padding: 20px 24px;
+    }
+    pre#jsonOutput {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .j-key   { color: #7ecfff; }
+    .j-str   { color: #a8d8a8; }
+    .j-num   { color: #f0c27f; }
+    .j-bool  { color: var(--amber); }
+    .j-null  { color: var(--muted); }
+
+    /* Formatted view */
+    #formattedOutput {
+      padding: 20px 24px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .kv-grid {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 6px 12px;
+    }
+    .kv-key {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .kv-val {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .badge-conforme     { color: var(--green);  font-weight: 600; }
+    .badge-atencao      { color: var(--amber);  font-weight: 600; }
+    .badge-nao-conforme { color: var(--red);    font-weight: 600; }
+    .badge-cached {
+      display: inline-block;
+      background: rgba(77,166,255,.12);
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 9px;
+      padding: 1px 6px;
+      border-radius: 2px;
+      letter-spacing: .06em;
+    }
+    .rt-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-top: 6px;
+    }
+    .rt-name {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    /* empty / error states */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+      color: var(--text-dim);
+    }
+    .empty-icon {
+      font-family: var(--mono);
+      font-size: 28px;
+      color: var(--border2);
+    }
+    .empty-text {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+    }
+
+    /* history */
+    #historyPane {
+      padding: 16px 24px;
+    }
+    .hist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .12s;
+    }
+    .hist-item:hover { background: rgba(255,255,255,.04); }
+    .hist-status { font-family: var(--mono); font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .hist-url { font-family: var(--mono); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+    .hist-time { font-family: var(--mono); font-size: 10px; color: var(--muted); flex-shrink: 0; }
+
+    /* db pane */
+    #dbPane { padding: 16px 24px; }
+    .db-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .db-filter {
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      outline: none;
+      width: 170px;
+    }
+    .db-filter:focus { border-color: var(--accent); }
+    select.db-filter option { background: var(--surface); }
+    .db-refresh {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+      margin-left: auto;
+    }
+    .db-refresh:hover { border-color: var(--accent); color: var(--accent); }
+    .db-count {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+    .db-table { width: 100%; border-collapse: collapse; }
+    .db-table th {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-align: left;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border2);
+      white-space: nowrap;
+    }
+    .db-table td {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .db-table tr:hover td { background: rgba(255,255,255,.03); }
+    .db-loading {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 20px 0;
+      text-align: center;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="topbar-logo">⬡ Compliance API</span>
+    <span class="topbar-sep"></span>
+    <span class="topbar-base">BASE URL</span>
+    <input id="baseInput" type="text" value="http://localhost:8000" spellcheck="false" />
+    <div class="status-dot" id="statusDot" title="Status da API"></div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">Sistema</div>
+    <button class="endpoint-btn" onclick="selectEndpoint('health', '/health', 'Health Check', false)">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-label">/health</span>
+    </button>
+    <div class="endpoint-desc">Verifica se a API está no ar</div>
+
+    <div class="sidebar-section" style="margin-top:8px">Conformidade AM</div>
+
+    <button class="endpoint-btn" onclick="selectEndpoint('ipaam', '/v1/compliance/am/{cnpj}', 'IPAAM — Licença Ambiental', true)">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-label">/am/{cnpj}</span>
+    </button>
+    <div class="endpoint-desc">Licença ambiental — IPAAM</div>
+
+    <button class="endpoint-btn" onclick="selectEndpoint('fvs', '/v1/compliance/am/{cnpj}/fvs', 'FVS/DEVISA — Vigilância Sanitária', true)">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-label">/am/{cnpj}/fvs</span>
+    </button>
+    <div class="endpoint-desc">Alvará sanitário — FVS/DEVISA</div>
+
+    <button class="endpoint-btn" onclick="selectEndpoint('crea', '/v1/compliance/am/{cnpj}/crea', 'CREA-AM — Registro de Empresa', true)">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-label">/am/{cnpj}/crea</span>
+    </button>
+    <div class="endpoint-desc">Registro profissional — CREA-AM</div>
+
+    <button class="endpoint-btn" onclick="selectEndpoint('ibama', '/v1/compliance/am/{cnpj}/ibama', 'IBAMA — Licença Ambiental Federal', true)">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-label">/am/{cnpj}/ibama</span>
+    </button>
+    <div class="endpoint-desc">Licença federal — IBAMA/SISLIC</div>
+
+    <div class="sidebar-section" style="margin-top:8px">Histórico</div>
+    <button class="endpoint-btn" onclick="selectEndpoint('history', '/v1/compliance/history', 'Histórico do banco', false)">
+      <span class="method-badge">GET</span>
+      <span class="endpoint-label">/history</span>
+    </button>
+    <div class="endpoint-desc">Registros salvos no banco</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- REQUEST -->
+    <div class="req-panel">
+      <div class="req-title">REQUEST</div>
+      <div class="req-row">
+        <div class="req-method">GET</div>
+        <div class="req-url-wrap">
+          <span class="req-url-base" id="urlBase">http://localhost:8000</span>
+          <input id="urlPath" type="text" placeholder="/health" value="/health" spellcheck="false" />
+        </div>
+        <button class="send-btn" id="sendBtn" onclick="sendRequest()">SEND</button>
+      </div>
+      <div class="param-row" id="cnpjRow" style="display:none">
+        <span class="param-label">CNPJ</span>
+        <input id="cnpjInput" type="text" placeholder="00000000000000" maxlength="18" oninput="formatCnpj(this)" spellcheck="false" />
+        <button class="fill-btn" onclick="fillCnpj()">↑ Preencher URL</button>
+        <button class="fill-btn" onclick="pasteExample()">Exemplo</button>
+      </div>
+    </div>
+
+    <!-- RESPONSE -->
+    <div class="res-panel">
+      <div class="res-header">
+        <span class="res-header-title">RESPONSE</span>
+        <span id="statusChip"></span>
+        <span class="res-time" id="resTime"></span>
+      </div>
+      <div class="res-tabs">
+        <div class="res-tab active" onclick="switchTab('formatted')">Formatado</div>
+        <div class="res-tab" onclick="switchTab('json')">JSON</div>
+        <div class="res-tab" onclick="switchTab('history')">Histórico</div>
+        <div class="res-tab" onclick="switchTab('db')">Banco</div>
+      </div>
+      <div class="res-content">
+
+        <!-- Formatted -->
+        <div class="tab-pane active" id="formattedPane">
+          <div id="formattedOutput">
+            <div class="empty-state">
+              <div class="empty-icon">//</div>
+              <div class="empty-text">Selecione um endpoint e clique SEND</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JSON -->
+        <div class="tab-pane" id="jsonPane">
+          <div class="json-wrap">
+            <pre id="jsonOutput"><span style="color:var(--muted)">// aguardando request...</span></pre>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="tab-pane" id="historyPane">
+          <div id="historyList"></div>
+        </div>
+
+        <!-- DB -->
+        <div class="tab-pane" id="dbPane">
+          <div class="db-toolbar">
+            <input class="db-filter" id="dbCnpjFilter" type="text" placeholder="Filtrar CNPJ..." maxlength="18" oninput="formatCnpj(this)" spellcheck="false" />
+            <select class="db-filter" id="dbOrgaoFilter" style="width:140px">
+              <option value="">Todos os órgãos</option>
+              <option value="IPAAM">IPAAM</option>
+              <option value="FVS/DEVISA">FVS/DEVISA</option>
+              <option value="CREA-AM">CREA-AM</option>
+            </select>
+            <span class="db-count" id="dbCount"></span>
+            <button class="db-refresh" onclick="loadDb()">↻ Atualizar</button>
+          </div>
+          <div id="dbTableWrap"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  /* ── STATE ── */
+  let currentEndpoint = 'health';
+  let needsCnpj = false;
+  const history = [];
+
+  /* ── INIT ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    syncUrlBase();
+    document.getElementById('baseInput').addEventListener('input', syncUrlBase);
+    document.getElementById('dbCnpjFilter').addEventListener('change', loadDb);
+    document.getElementById('dbOrgaoFilter').addEventListener('change', loadDb);
+    checkHealth();
+    selectEndpoint('health', '/health', 'Health Check', false);
+  });
+
+  function syncUrlBase() {
+    const base = document.getElementById('baseInput').value.replace(/\/$/, '');
+    document.getElementById('urlBase').textContent = base;
+  }
+
+  function getBase() {
+    return document.getElementById('baseInput').value.replace(/\/$/, '');
+  }
+
+  /* ── ENDPOINT SELECTION ── */
+  function selectEndpoint(id, path, label, hasCnpj) {
+    currentEndpoint = id;
+    needsCnpj = hasCnpj;
+    document.querySelectorAll('.endpoint-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    const urlPath = document.getElementById('urlPath');
+    document.getElementById('cnpjRow').style.display = hasCnpj ? 'flex' : 'none';
+
+    if (hasCnpj) {
+      urlPath.value = path;
+    } else {
+      urlPath.value = path;
+    }
+  }
+
+  /* ── CNPJ HELPERS ── */
+  function formatCnpj(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 14);
+    if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
+    else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d*)/, '$1.$2.$3/$4');
+    else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d*)/, '$1.$2.$3');
+    else if (v.length > 2) v = v.replace(/^(\d{2})(\d*)/, '$1.$2');
+    el.value = v;
+  }
+
+  function getCnpjClean() {
+    return document.getElementById('cnpjInput').value.replace(/\D/g, '');
+  }
+
+  function fillCnpj() {
+    const cnpj = getCnpjClean();
+    if (!cnpj) { alert('Digite o CNPJ primeiro.'); return; }
+    const path = document.getElementById('urlPath').value;
+    document.getElementById('urlPath').value = path.replace('{cnpj}', cnpj);
+  }
+
+  function pasteExample() {
+    document.getElementById('cnpjInput').value = '04.812.509/0001-90';
+    fillCnpj();
+  }
+
+  /* ── SEND ── */
+  async function sendRequest() {
+    const base = getBase();
+    let path = document.getElementById('urlPath').value.trim();
+    if (!path.startsWith('/')) path = '/' + path;
+
+    // Auto-fill cnpj if placeholder still present
+    if (needsCnpj && path.includes('{cnpj}')) {
+      const cnpj = getCnpjClean();
+      if (!cnpj) { alert('Preencha o CNPJ.'); return; }
+      path = path.replace('{cnpj}', cnpj);
+      document.getElementById('urlPath').value = path;
+    }
+
+    const url = base + path;
+    setLoading(true);
+    const t0 = Date.now();
+
+    try {
+      const res = await fetch(url);
+      const elapsed = Date.now() - t0;
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      renderResponse(res.status, data, elapsed, url);
+    } catch (err) {
+      const elapsed = Date.now() - t0;
+      renderError(err.message, elapsed, url);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /* ── LOADING STATE ── */
+  function setLoading(v) {
+    const btn = document.getElementById('sendBtn');
+    const dot = document.getElementById('statusDot');
+    btn.disabled = v;
+    btn.textContent = v ? '...' : 'SEND';
+    dot.className = 'status-dot' + (v ? ' busy' : '');
+  }
+
+  /* ── RENDER ── */
+  function renderResponse(status, data, elapsed, url) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot ' + (status < 300 ? 'ok' : 'err');
+
+    // Status chip
+    const chip = document.getElementById('statusChip');
+    const cls = status < 300 ? 'chip-200' : status < 500 ? 'chip-4xx' : 'chip-5xx';
+    chip.innerHTML = `<span class="status-chip ${cls}">${status}</span>`;
+    document.getElementById('resTime').textContent = elapsed + ' ms';
+
+    // JSON tab
+    document.getElementById('jsonOutput').innerHTML = highlight(JSON.stringify(data, null, 2));
+
+    // Formatted tab
+    document.getElementById('formattedOutput').innerHTML = buildFormatted(status, data);
+
+    // History
+    history.unshift({ status, url, elapsed, data, time: new Date() });
+    renderHistory();
+
+    switchTab('formatted');
+  }
+
+  function renderError(msg, elapsed, url) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot err';
+    document.getElementById('statusChip').innerHTML = `<span class="status-chip chip-5xx">ERR</span>`;
+    document.getElementById('resTime').textContent = elapsed + ' ms';
+    document.getElementById('jsonOutput').innerHTML = `<span style="color:var(--red)">${escHtml(msg)}</span>`;
+    document.getElementById('formattedOutput').innerHTML = `
+      <div class="empty-state" style="height:auto;padding:40px 24px">
+        <div class="empty-icon" style="color:var(--red)">✕</div>
+        <div class="empty-text" style="color:var(--red)">${escHtml(msg)}</div>
+        <div class="empty-text" style="font-size:10px;margin-top:4px">Verifique se a API está rodando em ${escHtml(getBase())}</div>
+      </div>`;
+    history.unshift({ status: 'ERR', url, elapsed, data: null, time: new Date() });
+    renderHistory();
+    switchTab('formatted');
+  }
+
+  /* ── FORMATTED BUILDER ── */
+  function buildFormatted(status, data) {
+    if (!data) return `<div class="empty-state" style="height:auto;padding:40px"><div class="empty-text">Sem corpo na resposta</div></div>`;
+
+    // Health
+    if (data.status && Object.keys(data).length === 1) {
+      return card('Sistema', kv({ Status: data.status === 'ok' ? '<span style="color:var(--green);font-weight:600">● ok</span>' : data.status }));
+    }
+
+    // Error
+    if (data.detail) {
+      return card('Erro', kv({ Detalhe: `<span style="color:var(--red)">${escHtml(data.detail)}</span>` }));
+    }
+
+    // Compliance response
+    const h = data.header;
+    const c = data.compliance;
+    if (!h || !c) return card('Resposta', `<pre style="font-family:var(--mono);font-size:11px;color:var(--text)">${escHtml(JSON.stringify(data, null, 2))}</pre>`);
+
+    const statusCls = c.status === 'CONFORME' ? 'badge-conforme' : c.status === 'ATENÇÃO' ? 'badge-atencao' : 'badge-nao-conforme';
+    const alertColors = { LOW: 'var(--green)', MEDIUM: 'var(--amber)', CRITICAL: 'var(--red)' };
+    const alertColor = alertColors[c.analysis.alert_level] || 'var(--text)';
+
+    let html = card('Cabeçalho', kv({
+      CNPJ:     formatCnpjDisplay(h.cnpj),
+      Órgão:    `<strong>${escHtml(h.provider)}</strong>`,
+      Região:   h.region,
+      'Consulta': fmtDatetime(h.queried_at),
+      Cache:    h.cached ? '<span class="badge-cached">HIT</span>' : '<span style="color:var(--text-dim)">MISS</span>',
+    }));
+
+    html += card('Conformidade', kv({
+      Status:       `<span class="${statusCls}">${escHtml(c.status)}</span>`,
+      Documento:    escHtml(c.document.type || '—'),
+      'Nº Licença': escHtml(c.document.number || '—'),
+      Validade:     c.document.expiry_date ? fmtDate(c.document.expiry_date) : '—',
+      'Dias p/ vencer': c.analysis.days_to_expiry != null ? `${c.analysis.days_to_expiry} dias` : '—',
+      'Alert Level': `<span style="color:${alertColor};font-weight:600">${escHtml(c.analysis.alert_level)}</span>`,
+      Válido:       c.analysis.is_valid ? '<span style="color:var(--green)">✓ Sim</span>' : '<span style="color:var(--red)">✗ Não</span>',
+    }));
+
+    // CREA details
+    if (data.details) {
+      const d = data.details;
+      const rp = d.registro_pj;
+      html += card('Registro PJ — CREA', kv({
+        Situação:    escHtml(rp.situacao || '—'),
+        'Nº Registro': escHtml(rp.numero_registro || '—'),
+        'Data Registro': rp.data_registro ? fmtDate(rp.data_registro) : '—',
+      }));
+
+      if (d.responsaveis_tecnicos && d.responsaveis_tecnicos.length) {
+        let rts = `<div class="card-title">RESPONSÁVEIS TÉCNICOS (${d.responsaveis_tecnicos.length})</div>`;
+        d.responsaveis_tecnicos.forEach(rt => {
+          const situacaoColor = /ATIV/i.test(rt.situacao || '') ? 'var(--green)' : 'var(--amber)';
+          rts += `<div class="rt-card">
+            <div class="rt-name">${escHtml(rt.nome || '—')}</div>
+            <div class="kv-grid" style="margin-top:4px">
+              ${kvRow('Título', escHtml(rt.titulo || '—'))}
+              ${kvRow('CREA', escHtml(rt.registro_crea || '—'))}
+              ${kvRow('Situação', `<span style="color:${situacaoColor}">${escHtml(rt.situacao || '—')}</span>`)}
+            </div>
+          </div>`;
+        });
+        html += `<div class="card">${rts}</div>`;
+      }
+    }
+
+    return html;
+  }
+
+  /* ── HISTORY ── */
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (!history.length) {
+      list.innerHTML = '<div class="empty-state" style="height:auto;padding:40px"><div class="empty-text">Nenhuma request ainda</div></div>';
+      return;
+    }
+    list.innerHTML = history.map((item, i) => {
+      const cls = item.status === 'ERR' || item.status >= 400 ? 'var(--red)' : 'var(--green)';
+      return `<div class="hist-item" onclick="replayHistory(${i})">
+        <span class="hist-status" style="color:${cls}">${item.status}</span>
+        <span class="hist-url">${escHtml(item.url)}</span>
+        <span class="hist-time">${item.elapsed}ms · ${item.time.toLocaleTimeString('pt-BR')}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function replayHistory(i) {
+    const item = history[i];
+    document.getElementById('jsonOutput').innerHTML = highlight(JSON.stringify(item.data, null, 2));
+    document.getElementById('formattedOutput').innerHTML = buildFormatted(item.status, item.data);
+    const chip = document.getElementById('statusChip');
+    const cls = item.status < 300 ? 'chip-200' : item.status < 500 ? 'chip-4xx' : 'chip-5xx';
+    chip.innerHTML = `<span class="status-chip ${cls}">${item.status}</span>`;
+    document.getElementById('resTime').textContent = item.elapsed + ' ms (histórico)';
+    switchTab('formatted');
+  }
+
+  /* ── HEALTH CHECK ── */
+  async function checkHealth() {
+    try {
+      const res = await fetch(getBase() + '/health', { signal: AbortSignal.timeout(3000) });
+      document.getElementById('statusDot').className = 'status-dot ' + (res.ok ? 'ok' : 'err');
+    } catch {
+      document.getElementById('statusDot').className = 'status-dot err';
+    }
+  }
+
+  /* ── TABS ── */
+  function switchTab(name) {
+    document.querySelectorAll('.res-tab').forEach((t, i) => {
+      const names = ['formatted', 'json', 'history', 'db'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    const map = { formatted: 'formattedPane', json: 'jsonPane', history: 'historyPane', db: 'dbPane' };
+    document.getElementById(map[name]).classList.add('active');
+    if (name === 'db') loadDb();
+  }
+
+  /* ── DB PANE ── */
+  async function loadDb() {
+    const wrap = document.getElementById('dbTableWrap');
+    wrap.innerHTML = '<div class="db-loading">carregando...</div>';
+
+    const cnpj = document.getElementById('dbCnpjFilter').value.replace(/\D/g, '');
+    const orgao = document.getElementById('dbOrgaoFilter').value;
+
+    let url = getBase() + '/v1/compliance/history?limit=100';
+    if (cnpj) url += '&cnpj=' + cnpj;
+    if (orgao) url += '&orgao=' + encodeURIComponent(orgao);
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      renderDbTable(rows);
+    } catch (err) {
+      wrap.innerHTML = `<div class="db-loading" style="color:var(--red)">${escHtml(err.message)}</div>`;
+      document.getElementById('dbCount').textContent = '';
+    }
+  }
+
+  function renderDbTable(rows) {
+    const wrap = document.getElementById('dbTableWrap');
+    document.getElementById('dbCount').textContent = rows.length + ' registro(s)';
+
+    if (!rows.length) {
+      wrap.innerHTML = '<div class="db-loading">Nenhum registro encontrado</div>';
+      return;
+    }
+
+    const statusColor = s => s === 'CONFORME' ? 'var(--green)' : s === 'ATENÇÃO' ? 'var(--amber)' : 'var(--red)';
+
+    const trs = rows.map(r => `<tr>
+      <td style="color:var(--text-dim)">${r.id}</td>
+      <td>${formatCnpjDisplay(r.cnpj)}</td>
+      <td>${escHtml(r.orgao)}</td>
+      <td style="color:${statusColor(r.status)};font-weight:600">${escHtml(r.status)}</td>
+      <td>${escHtml(r.numero_licenca || '—')}</td>
+      <td>${escHtml(r.tipo_licenca || '—')}</td>
+      <td>${r.validade ? fmtDate(r.validade) : '—'}</td>
+      <td>${r.days_to_expiry != null ? r.days_to_expiry + 'd' : '—'}</td>
+      <td style="color:var(--text-dim)">${fmtDatetime(r.data_consulta)}</td>
+    </tr>`).join('');
+
+    wrap.innerHTML = `<table class="db-table">
+      <thead><tr>
+        <th>#</th><th>CNPJ</th><th>Órgão</th><th>Status</th>
+        <th>Nº Licença</th><th>Tipo</th><th>Validade</th><th>Dias</th><th>Consultado em</th>
+      </tr></thead>
+      <tbody>${trs}</tbody>
+    </table>`;
+  }
+
+
+  /* ── JSON HIGHLIGHT ── */
+  function highlight(json) {
+    if (!json) return '';
+    return escHtml(json)
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")\s*:/g, '<span class="j-key">$1</span>:')
+      .replace(/:\s*("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*")/g, ': <span class="j-str">$1</span>')
+      .replace(/:\s*(-?\d+\.?\d*([eE][+-]?\d+)?)/g, ': <span class="j-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="j-bool">$1</span>')
+      .replace(/:\s*(null)/g, ': <span class="j-null">$1</span>');
+  }
+
+  /* ── UTILS ── */
+  function escHtml(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function card(title, body) {
+    return `<div class="card"><div class="card-title">${title.toUpperCase()}</div>${body}</div>`;
+  }
+
+  function kv(obj) {
+    return `<div class="kv-grid">${Object.entries(obj).map(([k,v]) => kvRow(k,v)).join('')}</div>`;
+  }
+
+  function kvRow(k, v) {
+    return `<div class="kv-key">${escHtml(k)}</div><div class="kv-val">${v}</div>`;
+  }
+
+  function formatCnpjDisplay(s) {
+    s = String(s || '').replace(/\D/g,'');
+    if (s.length === 14) return s.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+    return s;
+  }
+
+  function fmtDate(s) {
+    if (!s) return '—';
+    try { return new Date(s).toLocaleDateString('pt-BR'); } catch { return s; }
+  }
+
+  function fmtDatetime(s) {
+    if (!s) return '—';
+    try { return new Date(s).toLocaleString('pt-BR'); } catch { return s; }
+  }
+
+  /* keyboard shortcut: Ctrl+Enter / Cmd+Enter */
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendRequest();
+  });
+</script>
+</body>
+</html>

@@ -8,10 +8,12 @@ from db.models import ComplianceRecord
 from scrapers.ipaam import IpaamScraper
 from scrapers.fvs import FvsScraper
 from scrapers.crea_am import CreaAmScraper, CreaAmResult
+from scrapers.ibama import IbamaScraper
 from utils.compliance_rules import evaluate_status
 from .schemas import (
     ComplianceResponse, ResponseHeader, ComplianceInfo, DocumentInfo, AnalysisInfo,
     CreaComplianceResponse, CreaDetailsSchema, RegistroPjSchema, ResponsavelTecnicoSchema,
+    HistoryRecord,
 )
 
 import os
@@ -152,6 +154,63 @@ def get_compliance_crea(cnpj: str, db: Session = Depends(get_db)):
     db.refresh(record)
 
     return _build_crea_response(record, crea_result=crea_result, is_cached=False)
+
+
+@router.get("/am/{cnpj}/ibama", response_model=ComplianceResponse)
+def get_compliance_ibama(cnpj: str, db: Session = Depends(get_db)):
+    cnpj_clean = _clean_cnpj(cnpj)
+    if not CNPJ_RE.match(cnpj_clean):
+        raise HTTPException(status_code=422, detail="CNPJ inválido. Informe 14 dígitos numéricos.")
+
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=CACHE_TTL_HOURS)
+    cached: ComplianceRecord | None = (
+        db.query(ComplianceRecord)
+        .filter(
+            ComplianceRecord.cnpj == cnpj_clean,
+            ComplianceRecord.orgao == "IBAMA",
+            ComplianceRecord.data_consulta >= cutoff,
+        )
+        .order_by(ComplianceRecord.data_consulta.desc())
+        .first()
+    )
+
+    if cached:
+        return _build_response(cached, is_cached=True)
+
+    result = IbamaScraper().fetch(cnpj_clean)
+    status, days, alert = evaluate_status(result.expiry_date)
+
+    record = ComplianceRecord(
+        cnpj=cnpj_clean,
+        orgao="IBAMA",
+        status=status,
+        validade=result.expiry_date.isoformat() if result.expiry_date else None,
+        numero_licenca=result.numero_licenca,
+        tipo_licenca=result.tipo_licenca,
+        days_to_expiry=days,
+        payload_extraido=result.raw_payload,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    return _build_response(record, is_cached=False)
+
+
+@router.get("/history", response_model=list[HistoryRecord])
+def get_history(
+    limit: int = 50,
+    cnpj: str | None = None,
+    orgao: str | None = None,
+    db: Session = Depends(get_db),
+):
+    q = db.query(ComplianceRecord)
+    if cnpj:
+        q = q.filter(ComplianceRecord.cnpj == _clean_cnpj(cnpj))
+    if orgao:
+        q = q.filter(ComplianceRecord.orgao == orgao)
+    records = q.order_by(ComplianceRecord.data_consulta.desc()).limit(limit).all()
+    return records
 
 
 def _evaluate_crea_status(result: CreaAmResult) -> tuple[str, str]:
