@@ -3,43 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Compliance API — Tester</title>
+  <title>Compliance API</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0a0a0a;
-      --surface:   #111111;
-      --border:    #222222;
+      --bg:        #0d0d0d;
+      --surface:   #141414;
+      --surface2:  #1a1a1a;
+      --border:    #242424;
       --border2:   #2e2e2e;
-      --muted:     #444444;
-      --text:      #c8c8c8;
-      --text-dim:  #666666;
-      --accent:    #e8ff3c;
-      --green:     #39d353;
-      --amber:     #f5a623;
-      --red:       #ff4545;
-      --blue:      #4da6ff;
-      --mono:      'IBM Plex Mono', monospace;
-      --sans:      'IBM Plex Sans', sans-serif;
+      --muted:     #3a3a3a;
+      --text:      #e8e8e8;
+      --text-dim:  #5a5a5a;
+      --text-mid:  #999;
+      --accent:    #b8ff4a;
+      --green:     #4ade80;
+      --amber:     #fbbf24;
+      --red:       #f87171;
+      --blue:      #60a5fa;
+      --display:   'Syne', sans-serif;
+      --mono:      'JetBrains Mono', monospace;
     }
 
     html, body {
       height: 100%;
       background: var(--bg);
       color: var(--text);
-      font-family: var(--sans);
-      font-size: 14px;
+      font-family: var(--display);
+      font-size: 15px;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
     /* ── LAYOUT ── */
     .shell {
       display: grid;
-      grid-template-rows: 48px 1fr;
-      grid-template-columns: 260px 1fr;
+      grid-template-rows: 56px 1fr;
+      grid-template-columns: 240px 1fr;
       height: 100vh;
       overflow: hidden;
     }
@@ -49,100 +57,167 @@
       grid-column: 1 / -1;
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 0 20px;
+      gap: 16px;
+      padding: 0 24px;
       border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      background: var(--bg);
     }
     .topbar-logo {
-      font-family: var(--mono);
-      font-weight: 600;
-      font-size: 13px;
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: 15px;
       color: var(--accent);
-      letter-spacing: .08em;
+      letter-spacing: -.01em;
       text-transform: uppercase;
     }
     .topbar-sep { flex: 1; }
-    .topbar-base {
+    .topbar-label {
       font-family: var(--mono);
       font-size: 11px;
       color: var(--text-dim);
+      letter-spacing: .06em;
+      text-transform: uppercase;
     }
     #baseInput {
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border2);
       color: var(--text);
       font-family: var(--mono);
-      font-size: 11px;
-      padding: 3px 8px;
-      border-radius: 3px;
-      width: 240px;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 4px;
+      width: 260px;
       outline: none;
+      transition: border-color .15s;
     }
     #baseInput:focus { border-color: var(--accent); }
-    .status-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--muted);
-      transition: background .3s;
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      padding: 4px 10px;
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      transition: border-color .3s, color .3s;
     }
-    .status-dot.ok   { background: var(--green); box-shadow: 0 0 6px var(--green); }
-    .status-dot.err  { background: var(--red);   box-shadow: 0 0 6px var(--red); }
-    .status-dot.busy { background: var(--amber);  animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .status-pill.ok   { border-color: var(--green); color: var(--green); }
+    .status-pill.err  { border-color: var(--red);   color: var(--red);   }
+    .status-pill.busy { border-color: var(--amber);  color: var(--amber); animation: blink 1s infinite; }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
     /* ── SIDEBAR ── */
     .sidebar {
       border-right: 1px solid var(--border);
-      background: var(--surface);
+      background: var(--bg);
       overflow-y: auto;
-      padding: 16px 0;
+      padding: 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .sidebar-group {
+      margin-bottom: 8px;
     }
     .sidebar-section {
-      padding: 6px 16px 2px;
+      padding: 4px 20px 8px;
       font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: .12em;
+      font-size: 10px;
+      letter-spacing: .14em;
       text-transform: uppercase;
       color: var(--text-dim);
     }
-    .endpoint-btn {
+    .nav-btn {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
-      padding: 8px 16px;
+      padding: 10px 20px;
       background: none;
       border: none;
       cursor: pointer;
       text-align: left;
-      transition: background .15s;
+      transition: background .12s;
+      position: relative;
     }
-    .endpoint-btn:hover { background: rgba(255,255,255,.04); }
-    .endpoint-btn.active { background: rgba(232,255,60,.07); }
+    .nav-btn::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 2px;
+      background: var(--accent);
+      border-radius: 0 2px 2px 0;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,.03); }
+    .nav-btn.active { background: rgba(184,255,74,.06); }
+    .nav-btn.active::before { opacity: 1; }
     .method-badge {
       font-family: var(--mono);
       font-size: 9px;
-      font-weight: 600;
-      padding: 1px 5px;
-      border-radius: 2px;
-      background: rgba(77,166,255,.15);
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(96,165,250,.12);
       color: var(--blue);
       flex-shrink: 0;
       letter-spacing: .04em;
     }
-    .endpoint-label {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--text);
+    .nav-label {
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-mid);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: color .12s;
     }
-    .endpoint-desc {
+    .nav-btn.active .nav-label,
+    .nav-btn:hover .nav-label { color: var(--text); }
+    .nav-desc {
+      font-family: var(--mono);
       font-size: 10px;
       color: var(--text-dim);
-      padding: 0 16px 8px 16px;
+      padding: 0 20px 10px 44px;
+      line-height: 1.4;
+    }
+
+    /* sidebar dashboard nav */
+    .nav-page-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: .02em;
+      transition: color .12s, background .12s;
+      text-transform: uppercase;
+    }
+    .nav-page-btn:hover { color: var(--text); background: rgba(255,255,255,.02); }
+    .nav-page-btn.active { color: var(--accent); }
+    .nav-page-icon { font-size: 14px; opacity: .6; }
+
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 12px 20px;
     }
 
     /* ── MAIN ── */
@@ -150,52 +225,62 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
+
+    /* ── PAGES ── */
+    .page { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+    .page.active { display: flex; }
 
     /* ── REQUEST PANEL ── */
     .req-panel {
-      padding: 20px 24px 16px;
+      padding: 24px 32px 20px;
       border-bottom: 1px solid var(--border);
+      background: var(--bg);
     }
-    .req-title {
+    .req-eyebrow {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-dim);
       text-transform: uppercase;
-      letter-spacing: .1em;
-      margin-bottom: 12px;
+      letter-spacing: .14em;
+      margin-bottom: 14px;
     }
     .req-row {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
     }
     .req-method {
       font-family: var(--mono);
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--blue);
-      background: rgba(77,166,255,.12);
-      border: 1px solid rgba(77,166,255,.2);
-      padding: 6px 12px;
+      background: rgba(96,165,250,.1);
+      border: 1px solid rgba(96,165,250,.18);
+      padding: 8px 14px;
       border-radius: 4px;
       flex-shrink: 0;
+      letter-spacing: .06em;
     }
     .req-url-wrap {
       flex: 1;
       display: flex;
       align-items: center;
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border2);
       border-radius: 4px;
       overflow: hidden;
+      transition: border-color .15s;
     }
+    .req-url-wrap:focus-within { border-color: var(--accent); }
     .req-url-base {
       font-family: var(--mono);
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-dim);
-      padding: 6px 0 6px 12px;
+      padding: 8px 0 8px 14px;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     #urlPath {
       flex: 1;
@@ -203,8 +288,8 @@
       border: none;
       color: var(--accent);
       font-family: var(--mono);
-      font-size: 12px;
-      padding: 6px 12px;
+      font-size: 13px;
+      padding: 8px 14px;
       outline: none;
     }
     #urlPath::placeholder { color: var(--muted); }
@@ -212,58 +297,105 @@
       background: var(--accent);
       color: #000;
       border: none;
-      font-family: var(--mono);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 8px 20px;
+      font-family: var(--display);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 24px;
       border-radius: 4px;
       cursor: pointer;
-      letter-spacing: .05em;
+      letter-spacing: .04em;
+      text-transform: uppercase;
       transition: opacity .15s, transform .1s;
       flex-shrink: 0;
     }
     .send-btn:hover   { opacity: .88; }
     .send-btn:active  { transform: scale(.97); }
-    .send-btn:disabled { opacity: .35; cursor: not-allowed; }
+    .send-btn:disabled { opacity: .3; cursor: not-allowed; }
 
-    /* CNPJ helper */
+    /* param row */
     .param-row {
       display: flex;
-      gap: 8px;
-      margin-top: 10px;
+      gap: 10px;
+      margin-top: 14px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .param-label {
       font-family: var(--mono);
       font-size: 11px;
       color: var(--text-dim);
       flex-shrink: 0;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
     #cnpjInput {
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border2);
       color: var(--text);
       font-family: var(--mono);
-      font-size: 12px;
-      padding: 5px 10px;
+      font-size: 13px;
+      padding: 7px 12px;
       border-radius: 4px;
-      width: 200px;
+      width: 210px;
       outline: none;
-      letter-spacing: .06em;
+      letter-spacing: .08em;
+      transition: border-color .15s;
     }
     #cnpjInput:focus { border-color: var(--accent); }
-    .fill-btn {
+    .ghost-btn {
       background: none;
       border: 1px solid var(--border2);
       color: var(--text-dim);
       font-family: var(--mono);
-      font-size: 10px;
-      padding: 5px 10px;
+      font-size: 11px;
+      padding: 7px 12px;
       border-radius: 4px;
       cursor: pointer;
       transition: border-color .15s, color .15s;
+      white-space: nowrap;
     }
-    .fill-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .ghost-btn:hover { border-color: var(--text-mid); color: var(--text); }
+    .sync-btn {
+      background: none;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 18px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      transition: background .15s, opacity .15s, transform .1s;
+      flex-shrink: 0;
+    }
+    .sync-btn:hover  { background: rgba(184,255,74,.08); }
+    .sync-btn:active { transform: scale(.97); }
+    .sync-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+    /* sync progress */
+    .sync-progress {
+      display: none;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .sync-progress.visible { display: flex; }
+    .sync-step {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 3px 10px;
+      border-radius: 3px;
+      border: 1px solid var(--border2);
+      color: var(--text-dim);
+      letter-spacing: .06em;
+      transition: border-color .2s, color .2s, background .2s;
+    }
+    .sync-step.running { border-color: var(--amber); color: var(--amber); background: rgba(251,191,36,.06); }
+    .sync-step.done    { border-color: var(--green);  color: var(--green);  background: rgba(74,222,128,.06); }
+    .sync-step.error   { border-color: var(--red);    color: var(--red);    background: rgba(248,113,113,.06); }
 
     /* ── RESPONSE PANEL ── */
     .res-panel {
@@ -275,53 +407,46 @@
     .res-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 24px;
+      gap: 14px;
+      padding: 0 32px;
+      height: 48px;
       border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .res-header-title {
-      font-family: var(--mono);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--text-dim);
-    }
-    .status-chip {
-      font-family: var(--mono);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 3px;
-    }
-    .chip-200 { background: rgba(57,211,83,.15);  color: var(--green); }
-    .chip-4xx { background: rgba(245,166,35,.15); color: var(--amber); }
-    .chip-5xx { background: rgba(255,69,69,.15);  color: var(--red);   }
-    .res-time {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--text-dim);
-      margin-left: auto;
-    }
-    .res-tabs {
-      display: flex;
-      gap: 2px;
-      padding: 6px 24px 0;
-      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      flex-shrink: 0;
     }
     .res-tab {
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: .08em;
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
       text-transform: uppercase;
       color: var(--text-dim);
-      padding: 5px 12px;
+      padding: 0 2px;
+      height: 100%;
+      display: flex;
+      align-items: center;
       cursor: pointer;
       border-bottom: 2px solid transparent;
-      transition: color .15s;
+      transition: color .12s, border-color .12s;
     }
-    .res-tab:hover { color: var(--text); }
-    .res-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .res-tab:hover { color: var(--text-mid); }
+    .res-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .res-header-gap { flex: 1; }
+    .status-chip {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 3px;
+    }
+    .chip-200 { background: rgba(74,222,128,.12);  color: var(--green); }
+    .chip-4xx { background: rgba(251,191,36,.12); color: var(--amber); }
+    .chip-5xx { background: rgba(248,113,113,.12); color: var(--red);  }
+    .res-time {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
 
     .res-content {
       flex: 1;
@@ -335,55 +460,52 @@
     }
     .tab-pane.active { display: block; }
 
-    /* JSON view */
-    .json-wrap {
-      padding: 20px 24px;
-    }
+    /* JSON */
+    .json-wrap { padding: 28px 32px; }
     pre#jsonOutput {
       font-family: var(--mono);
-      font-size: 12px;
-      line-height: 1.8;
+      font-size: 13px;
+      line-height: 1.9;
       white-space: pre-wrap;
       word-break: break-all;
     }
-    .j-key   { color: #7ecfff; }
-    .j-str   { color: #a8d8a8; }
-    .j-num   { color: #f0c27f; }
-    .j-bool  { color: var(--amber); }
-    .j-null  { color: var(--muted); }
+    .j-key  { color: #7dd3fc; }
+    .j-str  { color: #86efac; }
+    .j-num  { color: #fcd34d; }
+    .j-bool { color: var(--amber); }
+    .j-null { color: var(--muted); }
 
-    /* Formatted view */
-    #formattedOutput {
-      padding: 20px 24px;
-    }
+    /* Formatted */
+    #formattedOutput { padding: 28px 32px; }
     .card {
       background: var(--surface);
-      border: 1px solid var(--border2);
+      border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 16px 20px;
-      margin-bottom: 12px;
+      padding: 20px 24px;
+      margin-bottom: 14px;
     }
     .card-title {
       font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: .14em;
+      font-size: 10px;
+      letter-spacing: .16em;
       text-transform: uppercase;
       color: var(--text-dim);
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
     .kv-grid {
       display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 6px 12px;
+      grid-template-columns: 160px 1fr;
+      gap: 8px 16px;
     }
     .kv-key {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-dim);
+      align-self: start;
     }
     .kv-val {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text);
       word-break: break-all;
     }
@@ -392,139 +514,351 @@
     .badge-nao-conforme { color: var(--red);    font-weight: 600; }
     .badge-cached {
       display: inline-block;
-      background: rgba(77,166,255,.12);
+      background: rgba(96,165,250,.1);
       color: var(--blue);
       font-family: var(--mono);
-      font-size: 9px;
-      padding: 1px 6px;
-      border-radius: 2px;
-      letter-spacing: .06em;
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      letter-spacing: .04em;
     }
     .rt-card {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 10px 14px;
-      margin-top: 6px;
+      padding: 12px 16px;
+      margin-top: 8px;
     }
     .rt-name {
-      font-family: var(--mono);
-      font-size: 12px;
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 500;
       color: var(--text);
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
 
-    /* empty / error states */
+    /* empty / error */
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100%;
-      gap: 10px;
+      gap: 14px;
       color: var(--text-dim);
     }
     .empty-icon {
       font-family: var(--mono);
-      font-size: 28px;
+      font-size: 32px;
       color: var(--border2);
+      letter-spacing: -.04em;
     }
     .empty-text {
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: .06em;
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: .02em;
     }
 
     /* history */
-    #historyPane {
-      padding: 16px 24px;
-    }
+    #historyPane { padding: 20px 32px; }
     .hist-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 7px 10px;
+      gap: 14px;
+      padding: 10px 12px;
       border-radius: 4px;
       cursor: pointer;
-      transition: background .12s;
+      border: 1px solid transparent;
+      transition: background .1s, border-color .1s;
     }
-    .hist-item:hover { background: rgba(255,255,255,.04); }
-    .hist-status { font-family: var(--mono); font-size: 11px; font-weight: 600; flex-shrink: 0; }
-    .hist-url { font-family: var(--mono); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
-    .hist-time { font-family: var(--mono); font-size: 10px; color: var(--muted); flex-shrink: 0; }
+    .hist-item:hover { background: var(--surface); border-color: var(--border); }
+    .hist-status { font-family: var(--mono); font-size: 12px; font-weight: 500; flex-shrink: 0; width: 36px; }
+    .hist-url { font-family: var(--mono); font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-mid); }
+    .hist-time { font-family: var(--mono); font-size: 11px; color: var(--text-dim); flex-shrink: 0; }
 
     /* db pane */
-    #dbPane { padding: 16px 24px; }
+    #dbPane { padding: 20px 32px; }
     .db-toolbar {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 14px;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
     }
     .db-filter {
-      background: var(--bg);
+      background: var(--surface);
       border: 1px solid var(--border2);
       color: var(--text);
       font-family: var(--mono);
-      font-size: 11px;
-      padding: 5px 10px;
+      font-size: 12px;
+      padding: 7px 12px;
       border-radius: 4px;
       outline: none;
-      width: 170px;
+      width: 180px;
+      transition: border-color .15s;
     }
     .db-filter:focus { border-color: var(--accent); }
-    select.db-filter option { background: var(--surface); }
+    select.db-filter option { background: var(--surface2); }
     .db-refresh {
       background: none;
       border: 1px solid var(--border2);
       color: var(--text-dim);
-      font-family: var(--mono);
-      font-size: 10px;
-      padding: 5px 10px;
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
       border-radius: 4px;
       cursor: pointer;
       transition: border-color .15s, color .15s;
       margin-left: auto;
+      text-transform: uppercase;
+      letter-spacing: .04em;
     }
     .db-refresh:hover { border-color: var(--accent); color: var(--accent); }
     .db-count {
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text-dim);
     }
     .db-table { width: 100%; border-collapse: collapse; }
     .db-table th {
       font-family: var(--mono);
-      font-size: 9px;
+      font-size: 10px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border2);
+      white-space: nowrap;
+    }
+    .db-table td {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text);
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .db-table tr:hover td { background: rgba(255,255,255,.02); }
+    .db-loading {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      padding: 32px 0;
+      text-align: center;
+    }
+
+    /* ── DASHBOARD PAGE ── */
+    #dashPage {
+      overflow-y: auto;
+      padding: 32px;
+      background: var(--bg);
+    }
+    .dash-header {
+      margin-bottom: 32px;
+    }
+    .dash-title {
+      font-family: var(--display);
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -.02em;
+      margin-bottom: 6px;
+    }
+    .dash-subtitle {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: .04em;
+    }
+    .dash-refresh-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text-dim);
+      font-family: var(--display);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .dash-refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* stat cards */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 22px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .stat-card:hover { border-color: var(--border2); }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--card-accent, var(--border2));
+      border-radius: 6px 6px 0 0;
+    }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .stat-value {
+      font-family: var(--display);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -.03em;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* donut chart */
+    .dash-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .dash-row-3 {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .dash-widget {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 22px 24px;
+    }
+    .widget-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    /* bar chart */
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; align-items: center; gap: 12px; }
+    .bar-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-mid);
+      width: 80px;
+      flex-shrink: 0;
+    }
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--border2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width .6s cubic-bezier(.4,0,.2,1);
+    }
+    .bar-count {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* status distribution ring */
+    .ring-wrap {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    .ring-svg { flex-shrink: 0; }
+    .ring-legend { display: flex; flex-direction: column; gap: 10px; }
+    .ring-item { display: flex; align-items: center; gap: 10px; }
+    .ring-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .ring-item-label { font-family: var(--mono); font-size: 11px; color: var(--text-mid); }
+    .ring-item-val { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--text); margin-left: auto; padding-left: 16px; }
+
+    /* recent table */
+    .recent-table { width: 100%; border-collapse: collapse; }
+    .recent-table th {
+      font-family: var(--mono);
+      font-size: 10px;
       letter-spacing: .1em;
       text-transform: uppercase;
       color: var(--text-dim);
       text-align: left;
       padding: 6px 10px;
       border-bottom: 1px solid var(--border2);
-      white-space: nowrap;
     }
-    .db-table td {
+    .recent-table td {
       font-family: var(--mono);
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text);
-      padding: 7px 10px;
+      padding: 9px 10px;
       border-bottom: 1px solid var(--border);
-      white-space: nowrap;
     }
-    .db-table tr:hover td { background: rgba(255,255,255,.03); }
-    .db-loading {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--text-dim);
-      padding: 20px 0;
-      text-align: center;
-    }
+    .recent-table tr:last-child td { border-bottom: none; }
+    .recent-table tr:hover td { background: rgba(255,255,255,.02); }
 
-    /* scrollbar */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+    /* expiry alerts */
+    .alert-list { display: flex; flex-direction: column; gap: 8px; }
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 4px;
+      border: 1px solid var(--border2);
+      background: var(--bg);
+    }
+    .alert-item.critical { border-color: rgba(248,113,113,.3); background: rgba(248,113,113,.04); }
+    .alert-item.warn     { border-color: rgba(251,191,36,.25); background: rgba(251,191,36,.04); }
+    .alert-cnpj { font-family: var(--mono); font-size: 12px; color: var(--text); flex: 1; }
+    .alert-orgao { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+    .alert-days { font-family: var(--display); font-size: 14px; font-weight: 700; }
+    .alert-days.critical { color: var(--red); }
+    .alert-days.warn     { color: var(--amber); }
+
+    /* dash loading */
+    .dash-loading {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 40px 0;
+    }
   </style>
 </head>
 <body>
@@ -533,131 +867,175 @@
 
   <!-- TOPBAR -->
   <header class="topbar">
-    <span class="topbar-logo">⬡ Compliance API</span>
+    <span class="topbar-logo">Compliance</span>
     <span class="topbar-sep"></span>
-    <span class="topbar-base">BASE URL</span>
+    <span class="topbar-label">Base URL</span>
     <input id="baseInput" type="text" value="http://localhost:8000" spellcheck="false" />
-    <div class="status-dot" id="statusDot" title="Status da API"></div>
+    <div class="status-pill" id="statusPill">
+      <div class="status-dot"></div>
+      <span id="statusLabel">offline</span>
+    </div>
   </header>
 
   <!-- SIDEBAR -->
   <nav class="sidebar">
-    <div class="sidebar-section">Sistema</div>
-    <button class="endpoint-btn" onclick="selectEndpoint('health', '/health', 'Health Check', false)">
-      <span class="method-badge">GET</span>
-      <span class="endpoint-label">/health</span>
-    </button>
-    <div class="endpoint-desc">Verifica se a API está no ar</div>
 
-    <div class="sidebar-section" style="margin-top:8px">Conformidade AM</div>
+    <div class="sidebar-group">
+      <button class="nav-page-btn active" id="navApiBtn" onclick="showPage('api')">
+        <span class="nav-page-icon">◈</span> API Explorer
+      </button>
+      <button class="nav-page-btn" id="navDashBtn" onclick="showPage('dash')">
+        <span class="nav-page-icon">◉</span> Dashboard
+      </button>
+    </div>
 
-    <button class="endpoint-btn" onclick="selectEndpoint('ipaam', '/v1/compliance/am/{cnpj}', 'IPAAM — Licença Ambiental', true)">
-      <span class="method-badge">GET</span>
-      <span class="endpoint-label">/am/{cnpj}</span>
-    </button>
-    <div class="endpoint-desc">Licença ambiental — IPAAM</div>
+    <div class="sidebar-divider"></div>
 
-    <button class="endpoint-btn" onclick="selectEndpoint('fvs', '/v1/compliance/am/{cnpj}/fvs', 'FVS/DEVISA — Vigilância Sanitária', true)">
-      <span class="method-badge">GET</span>
-      <span class="endpoint-label">/am/{cnpj}/fvs</span>
-    </button>
-    <div class="endpoint-desc">Alvará sanitário — FVS/DEVISA</div>
+    <div class="sidebar-group">
+      <div class="sidebar-section">Sistema</div>
+      <button class="nav-btn" onclick="selectEndpoint('health', '/health', 'Health Check', false)">
+        <span class="method-badge">GET</span>
+        <span class="nav-label">/health</span>
+      </button>
+      <div class="nav-desc">Status da API</div>
+    </div>
 
-    <button class="endpoint-btn" onclick="selectEndpoint('crea', '/v1/compliance/am/{cnpj}/crea', 'CREA-AM — Registro de Empresa', true)">
-      <span class="method-badge">GET</span>
-      <span class="endpoint-label">/am/{cnpj}/crea</span>
-    </button>
-    <div class="endpoint-desc">Registro profissional — CREA-AM</div>
+    <div class="sidebar-group">
+      <div class="sidebar-section">Conformidade AM</div>
+      <button class="nav-btn" onclick="selectEndpoint('ipaam', '/v1/compliance/am/{cnpj}', 'IPAAM', true)">
+        <span class="method-badge">GET</span>
+        <span class="nav-label">IPAAM</span>
+      </button>
+      <div class="nav-desc">Licença ambiental</div>
 
-    <button class="endpoint-btn" onclick="selectEndpoint('ibama', '/v1/compliance/am/{cnpj}/ibama', 'IBAMA — Licença Ambiental Federal', true)">
-      <span class="method-badge">GET</span>
-      <span class="endpoint-label">/am/{cnpj}/ibama</span>
-    </button>
-    <div class="endpoint-desc">Licença federal — IBAMA/SISLIC</div>
+      <button class="nav-btn" onclick="selectEndpoint('fvs', '/v1/compliance/am/{cnpj}/fvs', 'FVS/DEVISA', true)">
+        <span class="method-badge">GET</span>
+        <span class="nav-label">FVS / DEVISA</span>
+      </button>
+      <div class="nav-desc">Alvará sanitário</div>
 
-    <div class="sidebar-section" style="margin-top:8px">Histórico</div>
-    <button class="endpoint-btn" onclick="selectEndpoint('history', '/v1/compliance/history', 'Histórico do banco', false)">
-      <span class="method-badge">GET</span>
-      <span class="endpoint-label">/history</span>
-    </button>
-    <div class="endpoint-desc">Registros salvos no banco</div>
+      <button class="nav-btn" onclick="selectEndpoint('crea', '/v1/compliance/am/{cnpj}/crea', 'CREA-AM', true)">
+        <span class="method-badge">GET</span>
+        <span class="nav-label">CREA-AM</span>
+      </button>
+      <div class="nav-desc">Registro profissional</div>
+
+      <button class="nav-btn" onclick="selectEndpoint('ibama', '/v1/compliance/am/{cnpj}/ibama', 'IBAMA', true)">
+        <span class="method-badge">GET</span>
+        <span class="nav-label">IBAMA</span>
+      </button>
+      <div class="nav-desc">Licença federal</div>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-section">Banco</div>
+      <button class="nav-btn" onclick="selectEndpoint('history', '/v1/compliance/history', 'Histórico', false)">
+        <span class="method-badge">GET</span>
+        <span class="nav-label">Histórico</span>
+      </button>
+      <div class="nav-desc">Registros salvos</div>
+    </div>
+
   </nav>
 
   <!-- MAIN -->
   <main class="main">
 
-    <!-- REQUEST -->
-    <div class="req-panel">
-      <div class="req-title">REQUEST</div>
-      <div class="req-row">
-        <div class="req-method">GET</div>
-        <div class="req-url-wrap">
-          <span class="req-url-base" id="urlBase">http://localhost:8000</span>
-          <input id="urlPath" type="text" placeholder="/health" value="/health" spellcheck="false" />
+    <!-- PAGE: API EXPLORER -->
+    <div class="page active" id="apiPage">
+
+      <!-- REQUEST -->
+      <div class="req-panel">
+        <div class="req-eyebrow">Request</div>
+        <div class="req-row">
+          <div class="req-method">GET</div>
+          <div class="req-url-wrap">
+            <span class="req-url-base" id="urlBase">http://localhost:8000</span>
+            <input id="urlPath" type="text" placeholder="/health" value="/health" spellcheck="false" />
+          </div>
+          <button class="send-btn" id="sendBtn" onclick="sendRequest()">Enviar</button>
         </div>
-        <button class="send-btn" id="sendBtn" onclick="sendRequest()">SEND</button>
+        <div class="param-row" id="cnpjRow" style="display:none">
+          <span class="param-label">CNPJ</span>
+          <input id="cnpjInput" type="text" placeholder="00.000.000/0000-00" maxlength="18" oninput="formatCnpj(this)" spellcheck="false" />
+          <button class="ghost-btn" onclick="fillCnpj()">↑ Preencher URL</button>
+          <button class="ghost-btn" onclick="pasteExample()">Exemplo</button>
+          <button class="sync-btn" id="syncBtn" onclick="syncAll()">⟳ Sincronizar</button>
+        </div>
+        <div class="sync-progress" id="syncProgress">
+          <span class="sync-step" id="step-ipaam">IPAAM</span>
+          <span class="sync-step" id="step-fvs">FVS</span>
+          <span class="sync-step" id="step-crea">CREA-AM</span>
+          <span class="sync-step" id="step-ibama">IBAMA</span>
+        </div>
       </div>
-      <div class="param-row" id="cnpjRow" style="display:none">
-        <span class="param-label">CNPJ</span>
-        <input id="cnpjInput" type="text" placeholder="00000000000000" maxlength="18" oninput="formatCnpj(this)" spellcheck="false" />
-        <button class="fill-btn" onclick="fillCnpj()">↑ Preencher URL</button>
-        <button class="fill-btn" onclick="pasteExample()">Exemplo</button>
+
+      <!-- RESPONSE -->
+      <div class="res-panel">
+        <div class="res-header">
+          <div class="res-tab active" onclick="switchTab('formatted')">Formatado</div>
+          <div class="res-tab" onclick="switchTab('json')">JSON</div>
+          <div class="res-tab" onclick="switchTab('history')">Histórico</div>
+          <div class="res-tab" onclick="switchTab('db')">Banco</div>
+          <div class="res-header-gap"></div>
+          <span id="statusChip"></span>
+          <span class="res-time" id="resTime"></span>
+        </div>
+        <div class="res-content">
+
+          <div class="tab-pane active" id="formattedPane">
+            <div id="formattedOutput">
+              <div class="empty-state">
+                <div class="empty-icon">— —</div>
+                <div class="empty-text">Selecione um endpoint e envie</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="jsonPane">
+            <div class="json-wrap">
+              <pre id="jsonOutput"><span style="color:var(--muted)">// aguardando request...</span></pre>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="historyPane">
+            <div id="historyList" style="padding:20px 32px"></div>
+          </div>
+
+          <div class="tab-pane" id="dbPane">
+            <div id="dbPaneInner" style="padding:20px 32px">
+              <div class="db-toolbar">
+                <input class="db-filter" id="dbCnpjFilter" type="text" placeholder="Filtrar CNPJ..." maxlength="18" oninput="formatCnpj(this)" spellcheck="false" />
+                <select class="db-filter" id="dbOrgaoFilter" style="width:150px">
+                  <option value="">Todos os órgãos</option>
+                  <option value="IPAAM">IPAAM</option>
+                  <option value="FVS/DEVISA">FVS/DEVISA</option>
+                  <option value="CREA-AM">CREA-AM</option>
+                  <option value="IBAMA">IBAMA</option>
+                </select>
+                <span class="db-count" id="dbCount"></span>
+                <button class="db-refresh" onclick="loadDb()">↻ Atualizar</button>
+              </div>
+              <div id="dbTableWrap"></div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
-    <!-- RESPONSE -->
-    <div class="res-panel">
-      <div class="res-header">
-        <span class="res-header-title">RESPONSE</span>
-        <span id="statusChip"></span>
-        <span class="res-time" id="resTime"></span>
+    <!-- PAGE: DASHBOARD -->
+    <div class="page" id="dashPage">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:32px;padding:32px 32px 0">
+        <div class="dash-header" style="margin-bottom:0">
+          <div class="dash-title">Dashboard</div>
+          <div class="dash-subtitle" id="dashLastUpdate">Carregando dados...</div>
+        </div>
+        <button class="dash-refresh-btn" onclick="loadDashboard()">↻ Atualizar</button>
       </div>
-      <div class="res-tabs">
-        <div class="res-tab active" onclick="switchTab('formatted')">Formatado</div>
-        <div class="res-tab" onclick="switchTab('json')">JSON</div>
-        <div class="res-tab" onclick="switchTab('history')">Histórico</div>
-        <div class="res-tab" onclick="switchTab('db')">Banco</div>
-      </div>
-      <div class="res-content">
 
-        <!-- Formatted -->
-        <div class="tab-pane active" id="formattedPane">
-          <div id="formattedOutput">
-            <div class="empty-state">
-              <div class="empty-icon">//</div>
-              <div class="empty-text">Selecione um endpoint e clique SEND</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- JSON -->
-        <div class="tab-pane" id="jsonPane">
-          <div class="json-wrap">
-            <pre id="jsonOutput"><span style="color:var(--muted)">// aguardando request...</span></pre>
-          </div>
-        </div>
-
-        <!-- History -->
-        <div class="tab-pane" id="historyPane">
-          <div id="historyList"></div>
-        </div>
-
-        <!-- DB -->
-        <div class="tab-pane" id="dbPane">
-          <div class="db-toolbar">
-            <input class="db-filter" id="dbCnpjFilter" type="text" placeholder="Filtrar CNPJ..." maxlength="18" oninput="formatCnpj(this)" spellcheck="false" />
-            <select class="db-filter" id="dbOrgaoFilter" style="width:140px">
-              <option value="">Todos os órgãos</option>
-              <option value="IPAAM">IPAAM</option>
-              <option value="FVS/DEVISA">FVS/DEVISA</option>
-              <option value="CREA-AM">CREA-AM</option>
-            </select>
-            <span class="db-count" id="dbCount"></span>
-            <button class="db-refresh" onclick="loadDb()">↻ Atualizar</button>
-          </div>
-          <div id="dbTableWrap"></div>
-        </div>
-
+      <div style="padding:0 32px 32px;overflow-y:auto;flex:1" id="dashContent">
+        <div class="dash-loading">Carregando dashboard...</div>
       </div>
     </div>
 
@@ -668,7 +1046,7 @@
   /* ── STATE ── */
   let currentEndpoint = 'health';
   let needsCnpj = false;
-  const history = [];
+  const reqHistory = [];
 
   /* ── INIT ── */
   window.addEventListener('DOMContentLoaded', () => {
@@ -677,36 +1055,41 @@
     document.getElementById('dbCnpjFilter').addEventListener('change', loadDb);
     document.getElementById('dbOrgaoFilter').addEventListener('change', loadDb);
     checkHealth();
-    selectEndpoint('health', '/health', 'Health Check', false);
+    setInterval(checkHealth, 8000);
+    // mark health as default active
+    document.querySelector('.nav-btn').classList.add('active');
   });
 
   function syncUrlBase() {
     const base = document.getElementById('baseInput').value.replace(/\/$/, '');
     document.getElementById('urlBase').textContent = base;
   }
-
   function getBase() {
     return document.getElementById('baseInput').value.replace(/\/$/, '');
+  }
+
+  /* ── PAGE SWITCHING ── */
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-page-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(name === 'dash' ? 'dashPage' : 'apiPage').classList.add('active');
+    document.getElementById(name === 'dash' ? 'navDashBtn' : 'navApiBtn').classList.add('active');
+    if (name === 'dash') loadDashboard();
   }
 
   /* ── ENDPOINT SELECTION ── */
   function selectEndpoint(id, path, label, hasCnpj) {
     currentEndpoint = id;
     needsCnpj = hasCnpj;
-    document.querySelectorAll('.endpoint-btn').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-
-    const urlPath = document.getElementById('urlPath');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
     document.getElementById('cnpjRow').style.display = hasCnpj ? 'flex' : 'none';
-
-    if (hasCnpj) {
-      urlPath.value = path;
-    } else {
-      urlPath.value = path;
-    }
+    document.getElementById('urlPath').value = path;
+    // make sure we're on API page
+    if (!document.getElementById('apiPage').classList.contains('active')) showPage('api');
   }
 
-  /* ── CNPJ HELPERS ── */
+  /* ── CNPJ ── */
   function formatCnpj(el) {
     let v = el.value.replace(/\D/g, '').slice(0, 14);
     if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
@@ -715,18 +1098,15 @@
     else if (v.length > 2) v = v.replace(/^(\d{2})(\d*)/, '$1.$2');
     el.value = v;
   }
-
   function getCnpjClean() {
     return document.getElementById('cnpjInput').value.replace(/\D/g, '');
   }
-
   function fillCnpj() {
     const cnpj = getCnpjClean();
     if (!cnpj) { alert('Digite o CNPJ primeiro.'); return; }
     const path = document.getElementById('urlPath').value;
     document.getElementById('urlPath').value = path.replace('{cnpj}', cnpj);
   }
-
   function pasteExample() {
     document.getElementById('cnpjInput').value = '04.812.509/0001-90';
     fillCnpj();
@@ -737,19 +1117,15 @@
     const base = getBase();
     let path = document.getElementById('urlPath').value.trim();
     if (!path.startsWith('/')) path = '/' + path;
-
-    // Auto-fill cnpj if placeholder still present
     if (needsCnpj && path.includes('{cnpj}')) {
       const cnpj = getCnpjClean();
       if (!cnpj) { alert('Preencha o CNPJ.'); return; }
       path = path.replace('{cnpj}', cnpj);
       document.getElementById('urlPath').value = path;
     }
-
     const url = base + path;
     setLoading(true);
     const t0 = Date.now();
-
     try {
       const res = await fetch(url);
       const elapsed = Date.now() - t0;
@@ -757,145 +1133,110 @@
       try { data = await res.json(); } catch { data = null; }
       renderResponse(res.status, data, elapsed, url);
     } catch (err) {
-      const elapsed = Date.now() - t0;
-      renderError(err.message, elapsed, url);
+      renderError(err.message, Date.now() - t0, url);
     } finally {
       setLoading(false);
     }
   }
 
-  /* ── LOADING STATE ── */
   function setLoading(v) {
     const btn = document.getElementById('sendBtn');
-    const dot = document.getElementById('statusDot');
     btn.disabled = v;
-    btn.textContent = v ? '...' : 'SEND';
-    dot.className = 'status-dot' + (v ? ' busy' : '');
+    btn.textContent = v ? '...' : 'Enviar';
   }
 
   /* ── RENDER ── */
   function renderResponse(status, data, elapsed, url) {
-    const dot = document.getElementById('statusDot');
-    dot.className = 'status-dot ' + (status < 300 ? 'ok' : 'err');
-
-    // Status chip
-    const chip = document.getElementById('statusChip');
     const cls = status < 300 ? 'chip-200' : status < 500 ? 'chip-4xx' : 'chip-5xx';
-    chip.innerHTML = `<span class="status-chip ${cls}">${status}</span>`;
+    document.getElementById('statusChip').innerHTML = `<span class="status-chip ${cls}">${status}</span>`;
     document.getElementById('resTime').textContent = elapsed + ' ms';
-
-    // JSON tab
     document.getElementById('jsonOutput').innerHTML = highlight(JSON.stringify(data, null, 2));
-
-    // Formatted tab
     document.getElementById('formattedOutput').innerHTML = buildFormatted(status, data);
-
-    // History
-    history.unshift({ status, url, elapsed, data, time: new Date() });
+    reqHistory.unshift({ status, url, elapsed, data, time: new Date() });
     renderHistory();
-
     switchTab('formatted');
   }
 
   function renderError(msg, elapsed, url) {
-    const dot = document.getElementById('statusDot');
-    dot.className = 'status-dot err';
     document.getElementById('statusChip').innerHTML = `<span class="status-chip chip-5xx">ERR</span>`;
     document.getElementById('resTime').textContent = elapsed + ' ms';
     document.getElementById('jsonOutput').innerHTML = `<span style="color:var(--red)">${escHtml(msg)}</span>`;
     document.getElementById('formattedOutput').innerHTML = `
-      <div class="empty-state" style="height:auto;padding:40px 24px">
-        <div class="empty-icon" style="color:var(--red)">✕</div>
+      <div class="empty-state" style="height:auto;padding:48px">
+        <div class="empty-icon" style="color:var(--red);font-size:24px">ERR</div>
         <div class="empty-text" style="color:var(--red)">${escHtml(msg)}</div>
-        <div class="empty-text" style="font-size:10px;margin-top:4px">Verifique se a API está rodando em ${escHtml(getBase())}</div>
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-top:4px">Verifique se a API está rodando em ${escHtml(getBase())}</div>
       </div>`;
-    history.unshift({ status: 'ERR', url, elapsed, data: null, time: new Date() });
+    reqHistory.unshift({ status: 'ERR', url, elapsed, data: null, time: new Date() });
     renderHistory();
     switchTab('formatted');
   }
 
-  /* ── FORMATTED BUILDER ── */
+  /* ── FORMATTED ── */
   function buildFormatted(status, data) {
-    if (!data) return `<div class="empty-state" style="height:auto;padding:40px"><div class="empty-text">Sem corpo na resposta</div></div>`;
-
-    // Health
+    if (!data) return `<div class="empty-state" style="height:auto;padding:48px"><div class="empty-text">Sem corpo na resposta</div></div>`;
     if (data.status && Object.keys(data).length === 1) {
-      return card('Sistema', kv({ Status: data.status === 'ok' ? '<span style="color:var(--green);font-weight:600">● ok</span>' : data.status }));
+      return card('Sistema', kv({ Status: data.status === 'ok' ? '<span style="color:var(--green);font-weight:600">● online</span>' : data.status }));
     }
-
-    // Error
     if (data.detail) {
       return card('Erro', kv({ Detalhe: `<span style="color:var(--red)">${escHtml(data.detail)}</span>` }));
     }
-
-    // Compliance response
-    const h = data.header;
-    const c = data.compliance;
-    if (!h || !c) return card('Resposta', `<pre style="font-family:var(--mono);font-size:11px;color:var(--text)">${escHtml(JSON.stringify(data, null, 2))}</pre>`);
-
+    const h = data.header, c = data.compliance;
+    if (!h || !c) return card('Resposta', `<pre style="font-family:var(--mono);font-size:12px;color:var(--text)">${escHtml(JSON.stringify(data, null, 2))}</pre>`);
     const statusCls = c.status === 'CONFORME' ? 'badge-conforme' : c.status === 'ATENÇÃO' ? 'badge-atencao' : 'badge-nao-conforme';
     const alertColors = { LOW: 'var(--green)', MEDIUM: 'var(--amber)', CRITICAL: 'var(--red)' };
     const alertColor = alertColors[c.analysis.alert_level] || 'var(--text)';
-
     let html = card('Cabeçalho', kv({
-      CNPJ:     formatCnpjDisplay(h.cnpj),
-      Órgão:    `<strong>${escHtml(h.provider)}</strong>`,
-      Região:   h.region,
-      'Consulta': fmtDatetime(h.queried_at),
-      Cache:    h.cached ? '<span class="badge-cached">HIT</span>' : '<span style="color:var(--text-dim)">MISS</span>',
+      CNPJ: formatCnpjDisplay(h.cnpj),
+      Órgão: `<strong>${escHtml(h.provider)}</strong>`,
+      Região: h.region,
+      Consulta: fmtDatetime(h.queried_at),
+      Cache: h.cached ? '<span class="badge-cached">HIT</span>' : '<span style="color:var(--text-dim)">MISS</span>',
     }));
-
     html += card('Conformidade', kv({
-      Status:       `<span class="${statusCls}">${escHtml(c.status)}</span>`,
-      Documento:    escHtml(c.document.type || '—'),
+      Status: `<span class="${statusCls}">${escHtml(c.status)}</span>`,
+      Documento: escHtml(c.document.type || '—'),
       'Nº Licença': escHtml(c.document.number || '—'),
-      Validade:     c.document.expiry_date ? fmtDate(c.document.expiry_date) : '—',
+      Validade: c.document.expiry_date ? fmtDate(c.document.expiry_date) : '—',
       'Dias p/ vencer': c.analysis.days_to_expiry != null ? `${c.analysis.days_to_expiry} dias` : '—',
-      'Alert Level': `<span style="color:${alertColor};font-weight:600">${escHtml(c.analysis.alert_level)}</span>`,
-      Válido:       c.analysis.is_valid ? '<span style="color:var(--green)">✓ Sim</span>' : '<span style="color:var(--red)">✗ Não</span>',
+      'Nível de alerta': `<span style="color:${alertColor};font-weight:600">${escHtml(c.analysis.alert_level)}</span>`,
+      Válido: c.analysis.is_valid ? '<span style="color:var(--green)">✓ Sim</span>' : '<span style="color:var(--red)">✗ Não</span>',
     }));
-
-    // CREA details
     if (data.details) {
-      const d = data.details;
-      const rp = d.registro_pj;
+      const d = data.details, rp = d.registro_pj;
       html += card('Registro PJ — CREA', kv({
-        Situação:    escHtml(rp.situacao || '—'),
+        Situação: escHtml(rp.situacao || '—'),
         'Nº Registro': escHtml(rp.numero_registro || '—'),
         'Data Registro': rp.data_registro ? fmtDate(rp.data_registro) : '—',
       }));
-
       if (d.responsaveis_tecnicos && d.responsaveis_tecnicos.length) {
-        let rts = `<div class="card-title">RESPONSÁVEIS TÉCNICOS (${d.responsaveis_tecnicos.length})</div>`;
+        let rts = `<div class="card-title">Responsáveis Técnicos — ${d.responsaveis_tecnicos.length}</div>`;
         d.responsaveis_tecnicos.forEach(rt => {
-          const situacaoColor = /ATIV/i.test(rt.situacao || '') ? 'var(--green)' : 'var(--amber)';
-          rts += `<div class="rt-card">
-            <div class="rt-name">${escHtml(rt.nome || '—')}</div>
-            <div class="kv-grid" style="margin-top:4px">
+          const sc = /ATIV/i.test(rt.situacao || '') ? 'var(--green)' : 'var(--amber)';
+          rts += `<div class="rt-card"><div class="rt-name">${escHtml(rt.nome || '—')}</div>
+            <div class="kv-grid" style="margin-top:6px">
               ${kvRow('Título', escHtml(rt.titulo || '—'))}
               ${kvRow('CREA', escHtml(rt.registro_crea || '—'))}
-              ${kvRow('Situação', `<span style="color:${situacaoColor}">${escHtml(rt.situacao || '—')}</span>`)}
-            </div>
-          </div>`;
+              ${kvRow('Situação', `<span style="color:${sc}">${escHtml(rt.situacao || '—')}</span>`)}
+            </div></div>`;
         });
         html += `<div class="card">${rts}</div>`;
       }
     }
-
     return html;
   }
 
   /* ── HISTORY ── */
   function renderHistory() {
     const list = document.getElementById('historyList');
-    if (!history.length) {
-      list.innerHTML = '<div class="empty-state" style="height:auto;padding:40px"><div class="empty-text">Nenhuma request ainda</div></div>';
+    if (!reqHistory.length) {
+      list.innerHTML = '<div class="empty-state" style="height:auto;padding:48px"><div class="empty-text">Nenhuma request ainda</div></div>';
       return;
     }
-    list.innerHTML = history.map((item, i) => {
-      const cls = item.status === 'ERR' || item.status >= 400 ? 'var(--red)' : 'var(--green)';
+    list.innerHTML = reqHistory.map((item, i) => {
+      const c = item.status === 'ERR' || item.status >= 400 ? 'var(--red)' : 'var(--green)';
       return `<div class="hist-item" onclick="replayHistory(${i})">
-        <span class="hist-status" style="color:${cls}">${item.status}</span>
+        <span class="hist-status" style="color:${c}">${item.status}</span>
         <span class="hist-url">${escHtml(item.url)}</span>
         <span class="hist-time">${item.elapsed}ms · ${item.time.toLocaleTimeString('pt-BR')}</span>
       </div>`;
@@ -903,32 +1244,33 @@
   }
 
   function replayHistory(i) {
-    const item = history[i];
+    const item = reqHistory[i];
     document.getElementById('jsonOutput').innerHTML = highlight(JSON.stringify(item.data, null, 2));
     document.getElementById('formattedOutput').innerHTML = buildFormatted(item.status, item.data);
-    const chip = document.getElementById('statusChip');
     const cls = item.status < 300 ? 'chip-200' : item.status < 500 ? 'chip-4xx' : 'chip-5xx';
-    chip.innerHTML = `<span class="status-chip ${cls}">${item.status}</span>`;
+    document.getElementById('statusChip').innerHTML = `<span class="status-chip ${cls}">${item.status}</span>`;
     document.getElementById('resTime').textContent = item.elapsed + ' ms (histórico)';
     switchTab('formatted');
   }
 
-  /* ── HEALTH CHECK ── */
+  /* ── HEALTH ── */
   async function checkHealth() {
+    const pill = document.getElementById('statusPill');
+    const label = document.getElementById('statusLabel');
     try {
       const res = await fetch(getBase() + '/health', { signal: AbortSignal.timeout(3000) });
-      document.getElementById('statusDot').className = 'status-dot ' + (res.ok ? 'ok' : 'err');
+      pill.className = 'status-pill ' + (res.ok ? 'ok' : 'err');
+      label.textContent = res.ok ? 'online' : 'erro';
     } catch {
-      document.getElementById('statusDot').className = 'status-dot err';
+      pill.className = 'status-pill err';
+      label.textContent = 'offline';
     }
   }
 
   /* ── TABS ── */
   function switchTab(name) {
-    document.querySelectorAll('.res-tab').forEach((t, i) => {
-      const names = ['formatted', 'json', 'history', 'db'];
-      t.classList.toggle('active', names[i] === name);
-    });
+    const names = ['formatted', 'json', 'history', 'db'];
+    document.querySelectorAll('.res-tab').forEach((t, i) => t.classList.toggle('active', names[i] === name));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
     const map = { formatted: 'formattedPane', json: 'jsonPane', history: 'historyPane', db: 'dbPane' };
     document.getElementById(map[name]).classList.add('active');
@@ -939,19 +1281,15 @@
   async function loadDb() {
     const wrap = document.getElementById('dbTableWrap');
     wrap.innerHTML = '<div class="db-loading">carregando...</div>';
-
     const cnpj = document.getElementById('dbCnpjFilter').value.replace(/\D/g, '');
     const orgao = document.getElementById('dbOrgaoFilter').value;
-
     let url = getBase() + '/v1/compliance/history?limit=100';
     if (cnpj) url += '&cnpj=' + cnpj;
     if (orgao) url += '&orgao=' + encodeURIComponent(orgao);
-
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const rows = await res.json();
-      renderDbTable(rows);
+      renderDbTable(await res.json());
     } catch (err) {
       wrap.innerHTML = `<div class="db-loading" style="color:var(--red)">${escHtml(err.message)}</div>`;
       document.getElementById('dbCount').textContent = '';
@@ -959,37 +1297,255 @@
   }
 
   function renderDbTable(rows) {
-    const wrap = document.getElementById('dbTableWrap');
     document.getElementById('dbCount').textContent = rows.length + ' registro(s)';
-
     if (!rows.length) {
-      wrap.innerHTML = '<div class="db-loading">Nenhum registro encontrado</div>';
+      document.getElementById('dbTableWrap').innerHTML = '<div class="db-loading">Nenhum registro encontrado</div>';
       return;
     }
-
-    const statusColor = s => s === 'CONFORME' ? 'var(--green)' : s === 'ATENÇÃO' ? 'var(--amber)' : 'var(--red)';
-
+    const sc = s => s === 'CONFORME' ? 'var(--green)' : s === 'ATENÇÃO' ? 'var(--amber)' : 'var(--red)';
     const trs = rows.map(r => `<tr>
       <td style="color:var(--text-dim)">${r.id}</td>
       <td>${formatCnpjDisplay(r.cnpj)}</td>
       <td>${escHtml(r.orgao)}</td>
-      <td style="color:${statusColor(r.status)};font-weight:600">${escHtml(r.status)}</td>
+      <td style="color:${sc(r.status)};font-weight:600">${escHtml(r.status)}</td>
       <td>${escHtml(r.numero_licenca || '—')}</td>
       <td>${escHtml(r.tipo_licenca || '—')}</td>
       <td>${r.validade ? fmtDate(r.validade) : '—'}</td>
       <td>${r.days_to_expiry != null ? r.days_to_expiry + 'd' : '—'}</td>
       <td style="color:var(--text-dim)">${fmtDatetime(r.data_consulta)}</td>
     </tr>`).join('');
-
-    wrap.innerHTML = `<table class="db-table">
-      <thead><tr>
-        <th>#</th><th>CNPJ</th><th>Órgão</th><th>Status</th>
-        <th>Nº Licença</th><th>Tipo</th><th>Validade</th><th>Dias</th><th>Consultado em</th>
-      </tr></thead>
-      <tbody>${trs}</tbody>
-    </table>`;
+    document.getElementById('dbTableWrap').innerHTML = `<table class="db-table">
+      <thead><tr><th>#</th><th>CNPJ</th><th>Órgão</th><th>Status</th><th>Nº Licença</th><th>Tipo</th><th>Validade</th><th>Dias</th><th>Consultado em</th></tr></thead>
+      <tbody>${trs}</tbody></table>`;
   }
 
+  /* ── SYNC ALL ── */
+  async function syncAll() {
+    const cnpj = getCnpjClean();
+    if (!cnpj) { alert('Preencha o CNPJ primeiro.'); return; }
+    const base = getBase();
+    const steps = [
+      { id: 'ipaam', path: `/v1/compliance/am/${cnpj}`,       label: 'IPAAM'   },
+      { id: 'fvs',   path: `/v1/compliance/am/${cnpj}/fvs`,   label: 'FVS'     },
+      { id: 'crea',  path: `/v1/compliance/am/${cnpj}/crea`,  label: 'CREA-AM' },
+      { id: 'ibama', path: `/v1/compliance/am/${cnpj}/ibama`, label: 'IBAMA'   },
+    ];
+    const syncBtn = document.getElementById('syncBtn');
+    const progress = document.getElementById('syncProgress');
+    syncBtn.disabled = true;
+    progress.classList.add('visible');
+    steps.forEach(s => {
+      const el = document.getElementById('step-' + s.id);
+      el.className = 'sync-step';
+      el.textContent = s.label;
+    });
+    const results = [];
+    for (const step of steps) {
+      const el = document.getElementById('step-' + step.id);
+      el.classList.add('running');
+      try {
+        const res = await fetch(base + step.path);
+        const data = await res.json().catch(() => null);
+        el.classList.remove('running');
+        el.classList.add(res.ok ? 'done' : 'error');
+        el.textContent = step.label + (res.ok ? ' ✓' : ' ✕');
+        results.push({ step, status: res.status, data });
+      } catch {
+        el.classList.remove('running');
+        el.classList.add('error');
+        el.textContent = step.label + ' ✕';
+        results.push({ step, status: 'ERR', data: null });
+      }
+    }
+    syncBtn.disabled = false;
+    const last = results[results.length - 1];
+    if (last.data) renderResponse(last.status, last.data, 0, base + last.step.path);
+  }
+
+  /* ── DASHBOARD ── */
+  async function loadDashboard() {
+    const content = document.getElementById('dashContent');
+    const subtitle = document.getElementById('dashLastUpdate');
+    content.innerHTML = '<div class="dash-loading">Carregando dados...</div>';
+    try {
+      const res = await fetch(getBase() + '/v1/compliance/history?limit=500');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      subtitle.textContent = `${rows.length} registros · atualizado ${new Date().toLocaleTimeString('pt-BR')}`;
+      renderDashboard(rows);
+    } catch (err) {
+      const base = getBase();
+      content.innerHTML = `<div class="dash-loading" style="color:var(--red);line-height:2">
+        Erro ao carregar: ${escHtml(err.message)}<br>
+        <span style="color:var(--text-dim);font-size:11px">URL: ${escHtml(base + '/v1/compliance/history?limit=500')}</span><br>
+        <span style="color:var(--text-dim);font-size:11px">Verifique o campo Base URL no topo da página.</span>
+      </div>`;
+      subtitle.textContent = 'Falha ao carregar dados';
+    }
+  }
+
+  function renderDashboard(rows) {
+    const content = document.getElementById('dashContent');
+    if (!rows.length) {
+      content.innerHTML = '<div class="dash-loading">Nenhum dado disponível. Faça consultas na aba API Explorer primeiro.</div>';
+      return;
+    }
+
+    // Compute stats
+    const total = rows.length;
+    const conforme    = rows.filter(r => r.status === 'CONFORME').length;
+    const atencao     = rows.filter(r => r.status === 'ATENÇÃO').length;
+    const naoConforme = rows.filter(r => r.status === 'NÃO CONFORME').length;
+    const uniqueCnpjs = new Set(rows.map(r => r.cnpj)).size;
+
+    // By organ
+    const byOrgao = {};
+    rows.forEach(r => { byOrgao[r.orgao] = (byOrgao[r.orgao] || 0) + 1; });
+    const orgaoEntries = Object.entries(byOrgao).sort((a,b) => b[1]-a[1]);
+
+    // Expiring soon (days_to_expiry between 0 and 90)
+    const expiring = rows
+      .filter(r => r.days_to_expiry != null && r.days_to_expiry >= 0 && r.days_to_expiry <= 90)
+      .sort((a,b) => a.days_to_expiry - b.days_to_expiry)
+      .slice(0, 8);
+
+    // Recent 8
+    const recent = [...rows].sort((a,b) => new Date(b.data_consulta) - new Date(a.data_consulta)).slice(0, 8);
+
+    // Compliance rate
+    const rate = total > 0 ? Math.round((conforme / total) * 100) : 0;
+
+    // Build SVG ring
+    const ringHtml = buildRing([
+      { label: 'Conforme',     value: conforme,    color: '#4ade80' },
+      { label: 'Atenção',      value: atencao,     color: '#fbbf24' },
+      { label: 'Não Conforme', value: naoConforme, color: '#f87171' },
+    ], total);
+
+    const maxOrgao = orgaoEntries[0]?.[1] || 1;
+    const orgaoColors = { IPAAM: '#60a5fa', 'FVS/DEVISA': '#a78bfa', 'CREA-AM': '#34d399', IBAMA: '#fb923c' };
+
+    content.innerHTML = `
+      <!-- STAT CARDS -->
+      <div class="stat-grid">
+        <div class="stat-card" style="--card-accent:var(--accent)">
+          <div class="stat-label">Total de Consultas</div>
+          <div class="stat-value">${total}</div>
+          <div class="stat-sub">${uniqueCnpjs} CNPJ${uniqueCnpjs !== 1 ? 's' : ''} únicos</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--green)">
+          <div class="stat-label">Conformes</div>
+          <div class="stat-value" style="color:var(--green)">${conforme}</div>
+          <div class="stat-sub">${rate}% do total</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--amber)">
+          <div class="stat-label">Atenção</div>
+          <div class="stat-value" style="color:var(--amber)">${atencao}</div>
+          <div class="stat-sub">requerem monitoramento</div>
+        </div>
+        <div class="stat-card" style="--card-accent:var(--red)">
+          <div class="stat-label">Não Conformes</div>
+          <div class="stat-value" style="color:var(--red)">${naoConforme}</div>
+          <div class="stat-sub">ação necessária</div>
+        </div>
+      </div>
+
+      <!-- ROW 1 -->
+      <div class="dash-row">
+        <div class="dash-widget">
+          <div class="widget-title">Distribuição por Status</div>
+          ${ringHtml}
+        </div>
+        <div class="dash-widget">
+          <div class="widget-title">Consultas por Órgão</div>
+          <div class="bar-chart">
+            ${orgaoEntries.map(([orgao, count]) => `
+              <div class="bar-row">
+                <div class="bar-label">${escHtml(orgao)}</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:${Math.round((count/maxOrgao)*100)}%;background:${orgaoColors[orgao] || 'var(--accent)'}"></div>
+                </div>
+                <div class="bar-count">${count}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2 -->
+      <div class="dash-row-3">
+        <div class="dash-widget">
+          <div class="widget-title">Consultas Recentes</div>
+          <table class="recent-table">
+            <thead><tr><th>CNPJ</th><th>Órgão</th><th>Status</th><th>Validade</th><th>Consultado em</th></tr></thead>
+            <tbody>
+              ${recent.map(r => {
+                const sc = r.status === 'CONFORME' ? 'var(--green)' : r.status === 'ATENÇÃO' ? 'var(--amber)' : 'var(--red)';
+                return `<tr>
+                  <td>${formatCnpjDisplay(r.cnpj)}</td>
+                  <td style="color:var(--text-dim)">${escHtml(r.orgao)}</td>
+                  <td style="color:${sc};font-weight:600">${escHtml(r.status)}</td>
+                  <td>${r.validade ? fmtDate(r.validade) : '—'}</td>
+                  <td style="color:var(--text-dim)">${fmtDatetime(r.data_consulta)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="dash-widget">
+          <div class="widget-title">Vencendo em Breve</div>
+          ${expiring.length === 0
+            ? '<div style="font-family:var(--mono);font-size:12px;color:var(--text-dim);padding:12px 0">Nenhuma licença vencendo em 90 dias</div>'
+            : `<div class="alert-list">${expiring.map(r => {
+                const isCrit = r.days_to_expiry <= 30;
+                return `<div class="alert-item ${isCrit ? 'critical' : 'warn'}">
+                  <div>
+                    <div class="alert-cnpj">${formatCnpjDisplay(r.cnpj)}</div>
+                    <div class="alert-orgao">${escHtml(r.orgao)}</div>
+                  </div>
+                  <div class="alert-days ${isCrit ? 'critical' : 'warn'}">${r.days_to_expiry}d</div>
+                </div>`;
+              }).join('')}</div>`
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  function buildRing(segments, total) {
+    if (total === 0) return '<div style="font-family:var(--mono);font-size:12px;color:var(--text-dim)">Sem dados</div>';
+    const r = 52, cx = 64, cy = 64, strokeW = 12;
+    const circumference = 2 * Math.PI * r;
+    let offset = 0;
+    let arcs = '';
+    segments.forEach(seg => {
+      if (seg.value === 0) return;
+      const pct = seg.value / total;
+      const dash = pct * circumference;
+      const gap = circumference - dash;
+      arcs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}"
+        stroke-width="${strokeW}" stroke-dasharray="${dash.toFixed(2)} ${gap.toFixed(2)}"
+        stroke-dashoffset="${(-offset * circumference / (2*Math.PI) + circumference/4).toFixed(2)}"
+        style="transition:stroke-dasharray .6s"/>`;
+      offset += pct * 2 * Math.PI;
+    });
+    const rate = total > 0 ? Math.round((segments[0].value / total) * 100) : 0;
+    const svgW = 128;
+    return `<div class="ring-wrap">
+      <svg width="${svgW}" height="${svgW}" class="ring-svg" viewBox="0 0 128 128">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border2)" stroke-width="${strokeW}"/>
+        ${arcs}
+        <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="var(--text)" font-family="Syne,sans-serif" font-size="18" font-weight="800">${rate}%</text>
+        <text x="${cx}" y="${cy + 12}" text-anchor="middle" fill="var(--text-dim)" font-family="JetBrains Mono,monospace" font-size="9">conformes</text>
+      </svg>
+      <div class="ring-legend">
+        ${segments.map(s => `<div class="ring-item">
+          <div class="ring-dot" style="background:${s.color}"></div>
+          <span class="ring-item-label">${s.label}</span>
+          <span class="ring-item-val">${s.value}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
 
   /* ── JSON HIGHLIGHT ── */
   function highlight(json) {
@@ -1006,36 +1562,30 @@
   function escHtml(s) {
     return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
-
   function card(title, body) {
     return `<div class="card"><div class="card-title">${title.toUpperCase()}</div>${body}</div>`;
   }
-
   function kv(obj) {
     return `<div class="kv-grid">${Object.entries(obj).map(([k,v]) => kvRow(k,v)).join('')}</div>`;
   }
-
   function kvRow(k, v) {
     return `<div class="kv-key">${escHtml(k)}</div><div class="kv-val">${v}</div>`;
   }
-
   function formatCnpjDisplay(s) {
     s = String(s || '').replace(/\D/g,'');
     if (s.length === 14) return s.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
     return s;
   }
-
   function fmtDate(s) {
     if (!s) return '—';
     try { return new Date(s).toLocaleDateString('pt-BR'); } catch { return s; }
   }
-
   function fmtDatetime(s) {
     if (!s) return '—';
     try { return new Date(s).toLocaleString('pt-BR'); } catch { return s; }
   }
 
-  /* keyboard shortcut: Ctrl+Enter / Cmd+Enter */
+  /* keyboard shortcut */
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendRequest();
   });

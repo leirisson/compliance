@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: compliance
       POSTGRES_PASSWORD: compliance
       POSTGRES_DB: compliance_db
+    ports:
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
