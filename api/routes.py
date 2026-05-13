@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from db.session import get_db
 from db.models import ComplianceRecord
 from scrapers.ipaam import IpaamScraper
+from scrapers.fvs import FvsScraper
 from utils.compliance_rules import evaluate_status
 from .schemas import ComplianceResponse, ResponseHeader, ComplianceInfo, DocumentInfo, AnalysisInfo
 
@@ -50,6 +51,47 @@ def get_compliance_am(cnpj: str, db: Session = Depends(get_db)):
     record = ComplianceRecord(
         cnpj=cnpj_clean,
         orgao="IPAAM",
+        status=status,
+        validade=result.expiry_date.isoformat() if result.expiry_date else None,
+        numero_licenca=result.numero_licenca,
+        tipo_licenca=result.tipo_licenca,
+        days_to_expiry=days,
+        payload_extraido=result.raw_payload,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    return _build_response(record, is_cached=False)
+
+
+@router.get("/am/{cnpj}/fvs", response_model=ComplianceResponse)
+def get_compliance_fvs(cnpj: str, db: Session = Depends(get_db)):
+    cnpj_clean = _clean_cnpj(cnpj)
+    if not CNPJ_RE.match(cnpj_clean):
+        raise HTTPException(status_code=422, detail="CNPJ inválido. Informe 14 dígitos numéricos.")
+
+    cutoff = datetime.now(tz=timezone.utc) - timedelta(hours=CACHE_TTL_HOURS)
+    cached: ComplianceRecord | None = (
+        db.query(ComplianceRecord)
+        .filter(
+            ComplianceRecord.cnpj == cnpj_clean,
+            ComplianceRecord.orgao == "FVS/DEVISA",
+            ComplianceRecord.data_consulta >= cutoff,
+        )
+        .order_by(ComplianceRecord.data_consulta.desc())
+        .first()
+    )
+
+    if cached:
+        return _build_response(cached, is_cached=True)
+
+    result = FvsScraper().fetch(cnpj_clean)
+    status, days, alert = evaluate_status(result.expiry_date)
+
+    record = ComplianceRecord(
+        cnpj=cnpj_clean,
+        orgao="FVS/DEVISA",
         status=status,
         validade=result.expiry_date.isoformat() if result.expiry_date else None,
         numero_licenca=result.numero_licenca,
